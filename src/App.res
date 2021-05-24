@@ -1,18 +1,14 @@
-%%raw(`import './App.scss'; import logo from './logo.svg';`)
+%%raw(`import './App.scss';`)
 
 @react.component
 let make = () => {
-  <div className="App">
-    <header className="App-header">
-      <img src={%raw("logo")} className="App-logo" alt="logo" />
-      <p>
-        {React.string("Edit ")}
-        <code> {React.string("niedupa")} </code>
-        {React.string(" and save to reload.")}
-      </p>
-      <a className="App-link" href="https://reactjs.org" target="_blank" rel="noopener noreferrer">
-        {React.string("Learn React")}
-      </a>
-    </header>
+  let (selectedValue, setSelectedValue) = React.useState(_ => None)
+  let selectValue = value => setSelectedValue(_ => Some(value))
+  <div className="app-container">
+    <Dropdown selectedValue selectValue>
+      <Dropdown.Option value=0> {React.string("Value 1")} </Dropdown.Option>
+      <Dropdown.Option value=1> {React.string("Value 2")} </Dropdown.Option>
+      <Dropdown.Option value=2> {React.string("Value 3")} </Dropdown.Option>
+    </Dropdown>
   </div>
 }
