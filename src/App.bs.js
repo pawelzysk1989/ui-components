@@ -7,6 +7,22 @@ import * as Dropdown$Dropdown from "./components/Dropdown.bs.js";
 import './App.scss';
 ;
 
+var DropdownOfInts = Dropdown$Dropdown.MakeDropdown({});
+
+function countryToString(country) {
+  switch (country) {
+    case /* PL */0 :
+        return "Poland";
+    case /* GB */1 :
+        return "Great Britain";
+    case /* USA */2 :
+        return "United States";
+    
+  }
+}
+
+var DropdownOfCountries = Dropdown$Dropdown.MakeDropdown({});
+
 function App(Props) {
   var match = React.useState(function () {
         
@@ -17,27 +33,60 @@ function App(Props) {
                   return value;
                 }));
   };
+  var intLabelTemplate = function (value) {
+    return "Value ".concat(String(value));
+  };
+  var match$1 = React.useState(function () {
+        
+      });
+  var setSelectedCountry = match$1[1];
+  var selectCountry = function (value) {
+    return Curry._1(setSelectedCountry, (function (param) {
+                  return value;
+                }));
+  };
+  var countryLabelTemplate = countryToString;
   return React.createElement("div", {
               className: "app-container"
-            }, React.createElement(Dropdown$Dropdown.make, {
+            }, React.createElement(DropdownOfInts.make, {
                   selectedValue: match[0],
                   selectValue: selectValue,
+                  selectedValueTemplate: intLabelTemplate,
+                  placeholder: "Select value",
                   children: null
-                }, React.createElement(Dropdown$Dropdown.$$Option.make, {
+                }, React.createElement(DropdownOfInts.$$Option.make, {
                       value: 0,
-                      children: "Value 1"
-                    }), React.createElement(Dropdown$Dropdown.$$Option.make, {
+                      children: "Value ".concat(String(0))
+                    }), React.createElement(DropdownOfInts.$$Option.make, {
                       value: 1,
-                      children: "Value 2"
-                    }), React.createElement(Dropdown$Dropdown.$$Option.make, {
+                      children: "Value ".concat(String(1))
+                    }), React.createElement(DropdownOfInts.$$Option.make, {
                       value: 2,
-                      children: "Value 3"
+                      children: "Value ".concat(String(2))
+                    })), React.createElement(DropdownOfCountries.make, {
+                  selectedValue: match$1[0],
+                  selectValue: selectCountry,
+                  selectedValueTemplate: countryLabelTemplate,
+                  placeholder: "Select country",
+                  children: null
+                }, React.createElement(DropdownOfCountries.$$Option.make, {
+                      value: /* PL */0,
+                      children: "Poland"
+                    }), React.createElement(DropdownOfCountries.$$Option.make, {
+                      value: /* GB */1,
+                      children: "Great Britain"
+                    }), React.createElement(DropdownOfCountries.$$Option.make, {
+                      value: /* USA */2,
+                      children: "United States"
                     })));
 }
 
 var make = App;
 
 export {
+  DropdownOfInts ,
+  countryToString ,
+  DropdownOfCountries ,
   make ,
   
 }
