@@ -24,13 +24,27 @@ module MakeDropdown = (Item: Dropdown) => {
 
   @react.component
   let make = (~selectedValue, ~selectValue, ~selectedValueTemplate, ~placeholder, ~children) => {
-    <Context.Provider value=(selectedValue, selectValue)>
-      {switch selectedValue {
-      | None => placeholder
-      | Some(value) => selectedValueTemplate(value)
-      }}
-      children
-    </Context.Provider>
+    let (areOptionsDisplayed, setAreOptionsDisplayed) = React.useState(_ => false)
+    let toggleOptionsDisplay = _ => {
+      setAreOptionsDisplayed(prev => !prev)
+    }
+    <div className="app-dropdown">
+      <Context.Provider value=(selectedValue, selectValue)>
+        <div onClick={toggleOptionsDisplay} className="app-dropdown-selected-option">
+          {switch selectedValue {
+          | None => placeholder
+          | Some(value) => selectedValueTemplate(value)
+          }}
+        </div>
+        {switch areOptionsDisplayed {
+        | true => <>
+            <div className="app-dropdown-options"> children </div>
+            <div className="app-dropdown-overlay" onClick={toggleOptionsDisplay} />
+          </>
+        | false => React.null
+        }}
+      </Context.Provider>
+    </div>
   }
 
   module Option = {

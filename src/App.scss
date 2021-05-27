@@ -1,3 +1,7 @@
 .app-container {
-  padding: 2rem;
+  padding: 2rem 3.2rem;
+  display: grid;
+  grid-auto-flow: column;
+  justify-content: start;
+  gap: 2rem;
 }
