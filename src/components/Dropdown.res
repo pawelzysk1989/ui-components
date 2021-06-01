@@ -7,10 +7,18 @@ module type Dropdown = {
 module MakeDropdown = (Item: Dropdown) => {
   type value = Item.value
 
+  type context = {
+    selectedValue: option<value>,
+    setSelectedValue: value => unit,
+    setOptionsVisibility: bool => unit,
+  }
+
   module Context = {
-    let selected: option<value> = None
-    let setSelected: value => unit = _ => {Js.log("")}
-    let context = React.createContext((selected, setSelected))
+    let context = React.createContext({
+      selectedValue: None,
+      setSelectedValue: _ => (),
+      setOptionsVisibility: _ => (),
+    })
 
     module Provider = {
       let provider = React.Context.provider(context)
@@ -24,22 +32,28 @@ module MakeDropdown = (Item: Dropdown) => {
 
   @react.component
   let make = (~selectedValue, ~selectValue, ~selectedValueTemplate, ~placeholder, ~children) => {
-    let (areOptionsDisplayed, setAreOptionsDisplayed) = React.useState(_ => false)
-    let toggleOptionsDisplay = _ => {
-      setAreOptionsDisplayed(prev => !prev)
+    let (areOptionsVisible, setAreOptionsVisible) = React.useState(_ => false)
+    let toggleOptionsVisibility = _ => {
+      setAreOptionsVisible(prev => !prev)
     }
+    let setOptionsVisibility = isVisible => setAreOptionsVisible(_ => isVisible)
     <div className="app-dropdown">
-      <Context.Provider value=(selectedValue, selectValue)>
-        <div onClick={toggleOptionsDisplay} className="app-dropdown-selected-option">
+      <Context.Provider
+        value={
+          selectedValue: selectedValue,
+          setSelectedValue: selectValue,
+          setOptionsVisibility: setOptionsVisibility,
+        }>
+        <div onClick={toggleOptionsVisibility} className="app-dropdown-selected-option">
           {switch selectedValue {
           | None => placeholder
           | Some(value) => selectedValueTemplate(value)
           }}
         </div>
-        {switch areOptionsDisplayed {
+        {switch areOptionsVisible {
         | true => <>
+            <div className="app-dropdown-overlay" onClick={toggleOptionsVisibility} />
             <div className="app-dropdown-options"> children </div>
-            <div className="app-dropdown-overlay" onClick={toggleOptionsDisplay} />
           </>
         | false => React.null
         }}
@@ -49,10 +63,15 @@ module MakeDropdown = (Item: Dropdown) => {
 
   module Option = {
     @react.component
-    let make = (~value: value, ~children) => {
-      let (_, selectValue) = React.useContext(Context.context)
+    let make = (~value, ~children) => {
+      let {setSelectedValue, setOptionsVisibility} = React.useContext(Context.context)
 
-      <div onClick={_ => selectValue(value)} className="app-dropdown-option"> children </div>
+      let onClick = _ => {
+        setSelectedValue(value)
+        setOptionsVisibility(false)
+      }
+
+      <div onClick className="app-dropdown-option"> children </div>
     }
   }
 }
