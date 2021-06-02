@@ -37,23 +37,26 @@ module MakeDropdown = (Item: Dropdown) => {
       setAreOptionsVisible(prev => !prev)
     }
     let setOptionsVisibility = isVisible => setAreOptionsVisible(_ => isVisible)
-    <div className="app-dropdown">
+    <div className={`dropdown ${areOptionsVisible ? "dropdown--expanded" : ""}`}>
       <Context.Provider
         value={
           selectedValue: selectedValue,
           setSelectedValue: selectValue,
           setOptionsVisibility: setOptionsVisibility,
         }>
-        <div onClick={toggleOptionsVisibility} className="app-dropdown-selected-option">
-          {switch selectedValue {
-          | None => placeholder
-          | Some(value) => selectedValueTemplate(value)
-          }}
+        <div className="dropdown__trigger" onClick={toggleOptionsVisibility}>
+          <div className="dropdown__value">
+            {switch selectedValue {
+            | None => placeholder
+            | Some(value) => selectedValueTemplate(value)
+            }}
+          </div>
+          <div className="dropdown__arrow"> <Icon name=Icon.ArrowLeft /> </div>
         </div>
         {switch areOptionsVisible {
         | true => <>
-            <div className="app-dropdown-overlay" onClick={toggleOptionsVisibility} />
-            <div className="app-dropdown-options"> children </div>
+            <div className="dropdown__overlay" onClick={toggleOptionsVisibility} />
+            <div className="dropdown__options"> children </div>
           </>
         | false => React.null
         }}
@@ -71,7 +74,7 @@ module MakeDropdown = (Item: Dropdown) => {
         setOptionsVisibility(false)
       }
 
-      <div onClick className="app-dropdown-option"> children </div>
+      <div onClick className="dropdown__option"> children </div>
     }
   }
 }

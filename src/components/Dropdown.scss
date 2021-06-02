@@ -1,21 +1,18 @@
-.app-dropdown-wrapper {
-  border: lightslategrey solid 1px;
-  display: inline;
-}
-
-.app-dropdown {
+.dropdown {
   position: relative;
   display: inline-block;
   width: 15rem;
 
-  &-selected-option {
-    position: relative;
+  &__trigger {
     padding: 0.5rem;
     border: 1px solid grey;
     cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
   }
 
-  &-overlay {
+  &__overlay {
     z-index: 1000;
     position: fixed;
     width: 100%;
@@ -24,7 +21,7 @@
     top: 0;
   }
 
-  &-options {
+  &__options {
     position: absolute;
     z-index: 1001;
     width: 100%;
@@ -37,7 +34,7 @@
     margin-top: 0.3rem;
   }
 
-  &-option {
+  &__option {
     display: flex;
     padding: 0.5rem;
     border: 1px solid grey;
@@ -45,5 +42,17 @@
     & + & {
       border-top-width: 0;
     }
+  }
+
+  &__arrow {
+    font-size: 2rem;
+    fill: #626262;
+    transition: all 0.3s ease;
+    transform-origin: center;
+    display: flex;
+  }
+
+  &--expanded .dropdown__arrow {
+    transform: rotate(-90deg);
   }
 }
