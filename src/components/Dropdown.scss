@@ -6,10 +6,26 @@
   &__trigger {
     padding: 0.5rem;
     border: 1px solid grey;
+    border-radius: 0.3rem;
     cursor: pointer;
     display: flex;
     justify-content: space-between;
     align-items: center;
+
+    &:hover {
+      border-color: #2196f3;
+    }
+
+    &:focus {
+      box-shadow: 0 0 0 0.2rem #a6d5fa;
+      border-color: #2196f3;
+      outline: none;
+    }
+  }
+
+  &--expanded &__trigger {
+    box-shadow: 0 0 0 0.2rem #a6d5fa;
+    border-color: #2196f3;
   }
 
   &__overlay {
@@ -30,18 +46,28 @@
     position: absolute;
     top: 100%;
     z-index: 1001;
-    margin-top: 0.3rem;
-    animation: appear 0.4s linear;
+    padding: 0.5rem 0;
+    animation: appear 0.2s linear;
+    box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.2),
+      0 4px 5px 0 rgba(0, 0, 0, 0.14), 0 1px 10px 0 rgba(0, 0, 0, 0.12);
   }
 
   &__option {
     display: flex;
     padding: 0.5rem;
-    border: 1px solid grey;
     cursor: pointer;
 
-    & + & {
-      border-top-width: 0;
+    &--selected {
+      color: #495057;
+      background: #e3f2fd;
+      outline: none;
+    }
+
+    &:hover:not(&--selected),
+    &:focus:not(&--selected) {
+      color: #495057;
+      background: #e9ecef;
+      outline: none;
     }
   }
 
@@ -49,12 +75,17 @@
     display: flex;
     font-size: 2rem;
     fill: #626262;
-    transition: transform 0.3s linear;
+    transition: transform 0.2s linear;
     transform-origin: center;
   }
 
   &--expanded &__arrow {
     transform: rotate(-90deg);
+    fill: #2196f3;
+  }
+
+  &__trigger:focus &__arrow {
+    fill: #2196f3;
   }
 }
 

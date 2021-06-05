@@ -30,12 +30,18 @@ let make = () => {
   let countryLabelTemplate = country => country->countryToString->React.string
   let countryPlaceholder = React.string("Select country")
 
+  open Belt
+
   <div className="app-container">
     <DropdownOfInts
       selectedValue selectValue selectedValueTemplate=intLabelTemplate placeholder=intPlaceholder>
-      <DropdownOfInts.Option value=0> {intLabelTemplate(0)} </DropdownOfInts.Option>
-      <DropdownOfInts.Option value=1> {intLabelTemplate(1)} </DropdownOfInts.Option>
-      <DropdownOfInts.Option value=2> {intLabelTemplate(2)} </DropdownOfInts.Option>
+      {Array.range(0, 100)
+      ->Array.map(value => {
+        <DropdownOfInts.Option key={Int.toString(value)} value>
+          {intLabelTemplate(value)}
+        </DropdownOfInts.Option>
+      })
+      ->React.array}
     </DropdownOfInts>
     <DropdownOfCountries
       selectedValue=selectedCountry
