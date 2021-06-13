@@ -16,16 +16,11 @@
       border-color: #2196f3;
     }
 
-    &:focus {
+    &:focus-within {
       box-shadow: 0 0 0 0.2rem #a6d5fa;
       border-color: #2196f3;
       outline: none;
     }
-  }
-
-  &--expanded &__trigger {
-    box-shadow: 0 0 0 0.2rem #a6d5fa;
-    border-color: #2196f3;
   }
 
   &__overlay {
@@ -63,8 +58,13 @@
       outline: none;
     }
 
-    &:hover:not(&--selected),
-    &:focus:not(&--selected) {
+    &--disabled {
+      color: hotpink;
+      pointer-events: none;
+    }
+
+    &:hover:not(&--selected):not(&--disabled),
+    &:focus:not(&--selected):not(&--disabled) {
       color: #495057;
       background: #e9ecef;
       outline: none;

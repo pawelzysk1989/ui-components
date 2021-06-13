@@ -20,7 +20,7 @@ module DropdownOfCountries = Dropdown.MakeDropdown({
 
 @react.component
 let make = () => {
-  let (selectedValue, setSelectedValue) = React.useState(_ => None)
+  let (selectedValue, setSelectedValue) = React.useState(_ => Some(5))
   let selectValue = value => setSelectedValue(_ => Some(value))
   let intLabelTemplate = value => value->Belt.Int.toString->Js.String.concat("Value ")->React.string
   let intPlaceholder = React.string("Select value")
@@ -49,7 +49,9 @@ let make = () => {
       selectedValueTemplate=countryLabelTemplate
       placeholder=countryPlaceholder>
       <DropdownOfCountries.Option value=PL> {countryLabelTemplate(PL)} </DropdownOfCountries.Option>
-      <DropdownOfCountries.Option value=GB> {countryLabelTemplate(GB)} </DropdownOfCountries.Option>
+      <DropdownOfCountries.Option disabled=true value=GB>
+        {countryLabelTemplate(GB)}
+      </DropdownOfCountries.Option>
       <DropdownOfCountries.Option value=USA>
         {countryLabelTemplate(USA)}
       </DropdownOfCountries.Option>
