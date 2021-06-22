@@ -47,11 +47,14 @@ module MakeDropdown = (Item: Dropdown) => {
   let make = (~selectedValue, ~selectValue, ~selectedValueTemplate, ~placeholder, ~children) => {
     let (state, dispatch) = React.useReducer(reducer, initialState)
 
-    let setSelectedValue = value => {
-      selectValue(value)
-    }
     let dropdownRef = React.useRef(Js.Nullable.null)
     let optionsRef = React.useRef(Js.Nullable.null)
+
+    let setSelectedValue = value => {
+      dropdownRef.current->Js.Nullable.toOption->Belt.Option.forEach(focus)
+      dispatch(Hide)
+      selectValue(value)
+    }
 
     let manageOptionsFocus = direction => {
       let optionElements = optionsRef.current->Js.Nullable.toOption
@@ -109,11 +112,6 @@ module MakeDropdown = (Item: Dropdown) => {
       }
       None
     }, [state.isOpen])
-
-    React.useEffect1(() => {
-      dropdownRef.current->Js.Nullable.toOption->Belt.Option.forEach(focus)
-      None
-    }, [selectedValue])
 
     let onKeyDown = event => {
       switch ReactEvent.Keyboard.keyCode(event) {
@@ -183,6 +181,7 @@ module MakeDropdown = (Item: Dropdown) => {
         switch ReactEvent.Keyboard.keyCode(event) {
         | 13
         | 32 =>
+          ReactEvent.Keyboard.stopPropagation(event)
           setSelectedValue(value)
         | _ => ()
         }
