@@ -8,22 +8,29 @@ module type Dropdown = {
 module MakeDropdown = (Item: Dropdown) => {
   type value = Item.value
   type direction = Up | Down
+  type action = Toggle | Open | Hide
+  type state = {isOpen: bool}
 
   type context = {
     selectedValue: option<value>,
     setSelectedValue: value => unit,
-    focusedIndex: int,
-    setFocusedIndex: int => unit,
-    index: int,
   }
+
+  let initialState = {
+    isOpen: false,
+  }
+
+  let reducer = (state, action) =>
+    switch action {
+    | Toggle => {isOpen: !state.isOpen}
+    | Open => {isOpen: true}
+    | Hide => {isOpen: false}
+    }
 
   module Context = {
     let context = React.createContext({
       selectedValue: None,
       setSelectedValue: _ => (),
-      focusedIndex: 0,
-      setFocusedIndex: _ => (),
-      index: 0,
     })
 
     module Provider = {
@@ -38,89 +45,131 @@ module MakeDropdown = (Item: Dropdown) => {
 
   @react.component
   let make = (~selectedValue, ~selectValue, ~selectedValueTemplate, ~placeholder, ~children) => {
-    let (areOptionsVisible, setAreOptionsVisible) = React.useState(_ => false)
-    let (focusIndex, setFocusIndex) = React.useState(_ => 0)
-    let toggleOptionsVisibility = _ => {
-      setAreOptionsVisible(prev => !prev)
-    }
-    let setOptionsVisibility = isVisible => setAreOptionsVisible(_ => isVisible)
+    let (state, dispatch) = React.useReducer(reducer, initialState)
+
     let setSelectedValue = value => {
-      setOptionsVisibility(false)
       selectValue(value)
     }
-    let numberOfOptions = React.Children.count(children)
-    let setFocusedIndex = index => setFocusIndex(_ => index)
+    let dropdownRef = React.useRef(Js.Nullable.null)
+    let optionsRef = React.useRef(Js.Nullable.null)
 
-    let onKeyDown = event =>
+    let manageOptionsFocus = direction => {
+      let optionElements = optionsRef.current->Js.Nullable.toOption
+      let selectableQuery = "[role=option][tabindex='0']"
+      let selectables =
+        optionElements
+        ->Belt.Option.map(options => WebApi.Element.queryAll(options, selectableQuery))
+        ->Belt.Option.getWithDefault([])
+
+      let focused =
+        WebApi.Document.activeElement
+        ->Js.Nullable.toOption
+        ->Belt.Option.flatMap(focusedElement =>
+          Belt.Array.getBy(selectables, elem => elem == focusedElement)
+        )
+
+      let selected =
+        optionElements->Belt.Option.flatMap(options =>
+          WebApi.Element.querySelector(
+            options,
+            `${selectableQuery}[aria-selected=true]`,
+          )->Js.Nullable.toOption
+        )
+
+      switch (focused, selected) {
+      | (None, Some(selectedElement)) => focus(selectedElement)
+      | (None, None) =>
+        switch direction {
+        | Up =>
+          selectables->Belt.Array.get(Belt.Array.length(selectables))->Belt.Option.forEach(focus)
+        | Down => selectables->Belt.Array.get(0)->Belt.Option.forEach(focus)
+        }
+      | (Some(focusedElement), _) => {
+          let (optionsBeforeFocused, optionsAfterFocused) =
+            selectables->ArrayUtil.splitWithout(elem => elem == focusedElement)
+          switch direction {
+          | Up =>
+            Belt.Array.concat(optionsAfterFocused, optionsBeforeFocused)
+            ->Belt.Array.reverse
+            ->Belt.Array.get(0)
+            ->Belt.Option.forEach(focus)
+          | Down =>
+            Belt.Array.concat(optionsAfterFocused, optionsBeforeFocused)
+            ->Belt.Array.get(0)
+            ->Belt.Option.forEach(focus)
+          }
+        }
+      }
+    }
+
+    React.useEffect1(() => {
+      switch state.isOpen {
+      | true => manageOptionsFocus(Up)
+      | false => ()
+      }
+      None
+    }, [state.isOpen])
+
+    React.useEffect1(() => {
+      dropdownRef.current->Js.Nullable.toOption->Belt.Option.forEach(focus)
+      None
+    }, [selectedValue])
+
+    let onKeyDown = event => {
       switch ReactEvent.Keyboard.keyCode(event) {
+      | 9 => dispatch(Hide)
       | 13
       | 32 =>
-        toggleOptionsVisibility()
+        dispatch(Toggle)
       | 37
       | 38 =>
-        switch focusIndex == 0 {
-        | true => setFocusedIndex(numberOfOptions - 1)
-        | _ => setFocusedIndex(focusIndex - 1)
-        }
+        dispatch(Open)
+        manageOptionsFocus(Up)
       | 39
       | 40 =>
-        switch focusIndex == numberOfOptions - 1 {
-        | true => setFocusedIndex(0)
-        | _ => setFocusedIndex(focusIndex + 1)
-        }
-      | 9 => setOptionsVisibility(false)
+        dispatch(Open)
+        manageOptionsFocus(Down)
       | _ => ()
       }
-
-    <div
-      onKeyDown tabIndex=0 className={`dropdown ${areOptionsVisible ? "dropdown--expanded" : ""}`}>
+    }
+    <Context.Provider
+      value={
+        selectedValue: selectedValue,
+        setSelectedValue: setSelectedValue,
+      }>
       <div
-        className="dropdown__trigger"
         role="combobox"
-        ariaExpanded=areOptionsVisible
-        onClick=toggleOptionsVisibility>
-        <div className="dropdown__value">
-          {switch selectedValue {
-          | None => placeholder
-          | Some(value) => selectedValueTemplate(value)
-          }}
-        </div>
-        <div className="dropdown__arrow"> <Icon name=Icon.ArrowLeft /> </div>
-      </div>
-      {switch areOptionsVisible {
-      | true => <>
-          <div className="dropdown__overlay" onClick={toggleOptionsVisibility} />
-          <div className="dropdown__options" role="listbox" tabIndex={-1}>
-            {React.Children.mapWithIndex(children, (child, index) =>
-              <Context.Provider
-                value={
-                  selectedValue: selectedValue,
-                  setSelectedValue: setSelectedValue,
-                  focusedIndex: focusIndex,
-                  setFocusedIndex: setFocusedIndex,
-                  index: index,
-                }>
-                child
-              </Context.Provider>
-            )}
+        tabIndex=0
+        ref={ReactDOM.Ref.domRef(dropdownRef)}
+        onKeyDown
+        className={`dropdown ${state.isOpen ? "dropdown--expanded" : ""}`}>
+        <div
+          className="dropdown__trigger" ariaExpanded=state.isOpen onClick={_ => dispatch(Toggle)}>
+          <div className="dropdown__value">
+            {switch selectedValue {
+            | None => placeholder
+            | Some(value) => selectedValueTemplate(value)
+            }}
           </div>
-        </>
-      | false => React.null
-      }}
-    </div>
+          <div className="dropdown__arrow"> <Icon name=Icon.ArrowLeft /> </div>
+        </div>
+        {switch state.isOpen {
+        | true => <>
+            <div className="dropdown__overlay" onClick={_ => dispatch(Hide)} />
+            <div className="dropdown__options" role="listbox" ref={ReactDOM.Ref.domRef(optionsRef)}>
+              children
+            </div>
+          </>
+        | false => React.null
+        }}
+      </div>
+    </Context.Provider>
   }
 
   module Option = {
     @react.component
     let make = (~value, ~children, ~disabled: option<bool>=?) => {
-      let {
-        selectedValue,
-        setSelectedValue,
-        focusedIndex,
-        setFocusedIndex,
-        index,
-      } = React.useContext(Context.context)
-      let element = React.useRef(Js.Nullable.null)
+      let {selectedValue, setSelectedValue} = React.useContext(Context.context)
       let onClick = _ => setSelectedValue(value)
 
       let isSelected =
@@ -129,22 +178,6 @@ module MakeDropdown = (Item: Dropdown) => {
         ->Belt.Option.getWithDefault(false)
 
       let isDisabled = Belt.Option.getWithDefault(disabled, false)
-      let isFocused = index == focusedIndex
-
-      React.useEffect1(() => {
-        switch isSelected {
-        | true => setFocusedIndex(index)
-        | _ => ()
-        }
-        None
-      }, [isSelected])
-
-      React.useEffect1(() => {
-        Js.Nullable.toOption(element.current)
-        ->Option.filter(_ => isFocused)
-        ->Belt.Option.forEach(focus)
-        None
-      }, [isFocused])
 
       let onKeyDown = event => {
         switch ReactEvent.Keyboard.keyCode(event) {
@@ -160,10 +193,9 @@ module MakeDropdown = (Item: Dropdown) => {
             ? "dropdown__option--disabled"
             : ""}`}
         role="option"
-        tabIndex={0}
-        onKeyDown
+        tabIndex={isDisabled ? -1 : 0}
         ariaSelected=isSelected
-        ref={ReactDOM.Ref.domRef(element)}
+        onKeyDown
         onClick>
         children
       </div>

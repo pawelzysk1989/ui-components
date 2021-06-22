@@ -3,6 +3,12 @@
   display: inline-block;
   width: 15rem;
 
+  &:focus-within {
+    box-shadow: 0 0 0 0.2rem #a6d5fa;
+    border-color: #2196f3;
+    outline: none;
+  }
+
   &__trigger {
     padding: 0.5rem;
     border: 1px solid grey;
@@ -14,12 +20,6 @@
 
     &:hover {
       border-color: #2196f3;
-    }
-
-    &:focus-within {
-      box-shadow: 0 0 0 0.2rem #a6d5fa;
-      border-color: #2196f3;
-      outline: none;
     }
   }
 
