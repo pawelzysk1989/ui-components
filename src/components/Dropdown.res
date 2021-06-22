@@ -115,7 +115,9 @@ module MakeDropdown = (Item: Dropdown) => {
 
     let onKeyDown = event => {
       switch ReactEvent.Keyboard.keyCode(event) {
-      | 9 => dispatch(Hide)
+      | 9
+      | 27 =>
+        dispatch(Hide)
       | 13
       | 32 =>
         dispatch(Toggle)
