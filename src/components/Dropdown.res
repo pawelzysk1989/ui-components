@@ -8,7 +8,7 @@ module type Dropdown = {
 module MakeDropdown = (Item: Dropdown) => {
   type value = Item.value
   type direction = Up | Down
-  type action = Toggle | Open | Hide
+  type action = Toggle | Open | Hide | MoveUp | MoveDown
   type state = {isOpen: bool}
 
   type context = {
@@ -19,13 +19,6 @@ module MakeDropdown = (Item: Dropdown) => {
   let initialState = {
     isOpen: false,
   }
-
-  let reducer = (state, action) =>
-    switch action {
-    | Toggle => {isOpen: !state.isOpen}
-    | Open => {isOpen: true}
-    | Hide => {isOpen: false}
-    }
 
   module Context = {
     let context = React.createContext({
@@ -45,16 +38,8 @@ module MakeDropdown = (Item: Dropdown) => {
 
   @react.component
   let make = (~selectedValue, ~selectValue, ~selectedValueTemplate, ~placeholder, ~children) => {
-    let (state, dispatch) = React.useReducer(reducer, initialState)
-
     let dropdownRef = React.useRef(Js.Nullable.null)
     let optionsRef = React.useRef(Js.Nullable.null)
-
-    let setSelectedValue = value => {
-      dropdownRef.current->Js.Nullable.toOption->Belt.Option.forEach(focus)
-      dispatch(Hide)
-      selectValue(value)
-    }
 
     let manageOptionsFocus = direction => {
       let optionElements = optionsRef.current->Js.Nullable.toOption
@@ -84,9 +69,12 @@ module MakeDropdown = (Item: Dropdown) => {
       | (None, None) =>
         switch direction {
         | Up =>
-          selectables->Belt.Array.get(Belt.Array.length(selectables))->Belt.Option.forEach(focus)
+          selectables
+          ->Belt.Array.get(Belt.Array.length(selectables) - 1)
+          ->Belt.Option.forEach(focus)
         | Down => selectables->Belt.Array.get(0)->Belt.Option.forEach(focus)
         }
+
       | (Some(focusedElement), _) => {
           let (optionsBeforeFocused, optionsAfterFocused) =
             selectables->ArrayUtil.splitWithout(elem => elem == focusedElement)
@@ -105,13 +93,47 @@ module MakeDropdown = (Item: Dropdown) => {
       }
     }
 
-    React.useEffect1(() => {
-      switch state.isOpen {
-      | true => manageOptionsFocus(Up)
-      | false => ()
-      }
-      None
-    }, [state.isOpen])
+    let (state, dispatch) = ReactUpdate.useReducerWithMapState(
+      (state, action) =>
+        switch action {
+        | Hide => ReactUpdate.Update({isOpen: false})
+        | Toggle =>
+          ReactUpdate.UpdateWithSideEffects(
+            {isOpen: !state.isOpen},
+            ({state}) => {
+              switch state.isOpen {
+              | true => manageOptionsFocus(Down)
+              | false => ()
+              }
+              None
+            },
+          )
+        | Open
+        | MoveDown =>
+          ReactUpdate.UpdateWithSideEffects(
+            {isOpen: true},
+            _ => {
+              manageOptionsFocus(Down)
+              None
+            },
+          )
+        | MoveUp =>
+          ReactUpdate.UpdateWithSideEffects(
+            {isOpen: true},
+            _ => {
+              manageOptionsFocus(Up)
+              None
+            },
+          )
+        },
+      () => initialState,
+    )
+
+    let setSelectedValue = value => {
+      dropdownRef.current->Js.Nullable.toOption->Belt.Option.forEach(focus)
+      dispatch(Hide)
+      selectValue(value)
+    }
 
     let onKeyDown = event => {
       switch ReactEvent.Keyboard.keyCode(event) {
@@ -123,15 +145,14 @@ module MakeDropdown = (Item: Dropdown) => {
         dispatch(Toggle)
       | 37
       | 38 =>
-        dispatch(Open)
-        manageOptionsFocus(Up)
+        dispatch(MoveUp)
       | 39
       | 40 =>
-        dispatch(Open)
-        manageOptionsFocus(Down)
+        dispatch(MoveDown)
       | _ => ()
       }
     }
+
     <Context.Provider
       value={
         selectedValue: selectedValue,
