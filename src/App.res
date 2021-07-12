@@ -1,6 +1,6 @@
 %%raw(`import './App.scss';`)
 
-module DropdownOfInts = Dropdown.MakeDropdown({
+module DropdownOfInts = Dropdown.Make({
   type value = int
 })
 
@@ -14,7 +14,7 @@ let countryToString = country => {
   }
 }
 
-module DropdownOfCountries = Dropdown.MakeDropdown({
+module DropdownOfCountries = Dropdown.Make({
   type value = country
 })
 
